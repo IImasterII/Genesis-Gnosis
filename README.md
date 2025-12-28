@@ -213,7 +213,7 @@ TG_CHAT_ID = ""
 
 ### 4. Запуск
 ```bash
-python main.py 
+python genesis_main.py 
 ```
 Откроется GUI. Введите вашу задачу в поле ввода и нажмите "ENGAGE".
 
