@@ -1,0 +1,29 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Project specific folders (generated during runtime)
+genesis_logs/
+genesis_thoughts/
+genesis_workspace/
+genesis_artifacts/
+states/
+system_cache/
+temp_scripts/
+visuals/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Local config safeguards (на всякий случай, хотя config.py мы грузим как шаблон)
+# Если у тебя там реальные ключи - удали их перед коммитом!

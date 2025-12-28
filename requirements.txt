@@ -1,0 +1,29 @@
+# --- AI & Core Logic ---
+openai>=1.0.0          # Клиент для работы с LLM (OpenAI API format)
+pydantic>=2.0.0        # Валидация данных и строгие структуры (JSON parsing)
+networkx>=3.0          # Работа с Графом Знаний (Knowledge Graph)
+numpy                  # Математические вычисления
+pandas                 # Обработка табличных данных
+
+# --- Web Scraping & Research (OSINT) ---
+requests               # HTTP-запросы
+urllib3                # Управление соединениями (используется внутри requests)
+beautifulsoup4         # Парсинг HTML и очистка веб-страниц
+wikipedia              # API для работы с Википедией
+duckduckgo-search      # Поиск в DuckDuckGo (обход слежки)
+arxiv                  # API для поиска научных статей
+
+# --- Document Processing ---
+python-docx            # Генерация и форматирование .docx файлов (НЕ путать с docx)
+PyPDF2                 # Чтение и обработка PDF файлов
+
+# --- GUI & Interface ---
+customtkinter          # Современный интерфейс (Dark Mode, HighDPI)
+pillow                 # Работа с изображениями (для GUI и графиков)
+packaging              # Утилита для управления версиями
+
+# --- Visualization (For Writer Agent) ---
+# Эти библиотеки нужны, чтобы Агент-Писатель мог генерировать 
+# и исполнять код для построения графиков
+matplotlib
+seaborn
