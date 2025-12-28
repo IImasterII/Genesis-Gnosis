@@ -171,7 +171,7 @@ graph TD
 ### 1. Установка
 ```bash
 # Клонировать репозиторий
-git clone https://github.com/your-username/genesis-gnosis.git
+git clone https://github.com/iimasterii/genesis-gnosis.git
 cd genesis-gnosis
 
 # Установить зависимости
