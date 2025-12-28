@@ -85,23 +85,23 @@ graph TD
     end
 
     %% Define the workflow connections
-    UserInput --> Architect;
-    Architect -- Создает Master Plan --> Researcher;
-    Researcher -- Наполняет --> KG;
-    Researcher -- Использует --> WebSurfer;
+    UserInput --> Architect
+    Architect -- "Создает Master Plan" --> Researcher
+    Researcher -- "Наполняет" --> KG
+    Researcher -- "Использует" --> WebSurfer
     
-    KG -- RAG-запрос --> Writer;
-    Writer -- Черновик главы --> Critic;
-    Critic -- "Отклонено" ❌ --> Writer;
-    Critic -- "Принято" ✅ --> PostProcessing;
-    PostProcessing -- Готовая глава --> KG; %% Сохраняем готовую главу в граф
+    KG -- "RAG-запрос" --> Writer
+    Writer -- "Черновик главы" --> Critic
+    Critic -- "Отклонено ❌" --> Writer
+    Critic -- "Принято ✅" --> PostProcessing
+    PostProcessing -- "Готовая глава" --> KG
     
-    Writer -- Использует --> ChartGen;
+    Writer -- "Использует" --> ChartGen
 
     %% Loop Control by Orchestrator
-    Architect -- План миссии --> Assembler;
-    KG -- Финальные данные --> Assembler;
-    Assembler -- Собирает все главы --> FinalDoc;
+    Architect -- "План миссии" --> Assembler
+    KG -- "Финальные данные" --> Assembler
+    Assembler -- "Собирает все главы" --> FinalDoc
 
     %% Apply Styles
     class UserInput,FinalDoc artifact;
