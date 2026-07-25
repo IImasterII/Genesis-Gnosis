@@ -34,7 +34,7 @@ import requests
 import urllib3
 import wikipedia
 from bs4 import BeautifulSoup
-from ddgs import DDGS
+from duckduckgo_search import DDGS
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_ALIGN_VERTICAL 
@@ -171,6 +171,9 @@ class ArticleMasterPlan(BaseModel):
     """
     main_title: str = Field(..., description="Основное название всей статьи/книги.")
     subtitle: Optional[str] = Field(default="", description="Подзаголовок.")
+    doc_type: Optional[str] = Field(default="Дипломная работа", description="Тип документа (Статья, Диплом и т.д.).")
+    author: Optional[str] = Field(default="Студент", description="Автор.")
+    supervisor: Optional[str] = Field(default="Преподаватель", description="Руководитель.")
     abstract_objective: str = Field(default="Комплексный анализ темы.", description="Краткая аннотация.")
     chapters: List[ChapterBlueprint] = Field(..., description="Список детальных планов.")
 
@@ -261,26 +264,24 @@ class PromptsLibrary:
     # Это реализует твое требование о "очень, очень объёмном плане".
     ARCHITECT_ROLE = (
         f"{SYSTEM_MANDATE}\n\n"
-        "ПРОТОКОЛ: СТРАТЕГИЧЕСКОЕ ПРОЕКТИРОВАНИЕ ЗНАНИЙ.\n"
-        "ТВОЯ РОЛЬ: Ты — Архитектор Смыслов. Твоя задача — не просто набросать оглавление, а создать фундаментальный чертеж (Master Plan) для будущего документа.\n"
-        "ЗАДАЧА: Разработать исчерпывающий, логически безупречный и детализированный план для комплексного раскрытия заданной темы.\n\n"
+        "ПРОТОКОЛ: СТРАТЕГИЧЕСКОЕ ПРОЕКТИРОВАНИЕ ЗНАНИЙ (АКАДЕМИЧЕСКИЙ СТАНДАРТ).\n"
+        "ТВОЯ РОЛЬ: Ты — Академический Архитектор. Твоя задача — создать фундаментальный чертеж (Master Plan) для профессиональной научно-исследовательской (дипломной) работы.\n"
+        "ЗАДАЧА: Разработать исчерпывающий, логически безупречный и детализированный план, соответствующий стандартам написания академических работ.\n\n"
         "ПРОЦЕСС РАБОТЫ В ДВА ЭТАПА:\n"
         "ЭТАП 1: КОГНИТИВНОЕ СКАНИРОВАНИЕ (Внутренний монолог, не для вывода)\n"
-        "   - *Какие фундаментальные вопросы лежат в основе этой темы?*\n"
-        "   - *Какова конечная цель документа? Что должен понять читатель?*\n"
-        "   - *Каков наилучший путь для читателя? От простого к сложному? От общего к частному?*\n"
-        "   - *Какие подтемы являются ключевыми, а какие — второстепенными?*\n"
-        "   - *Существуют ли в теме противоречия или разные точки зрения, которые нужно осветить?*\n\n"
+        "   - *Какие фундаментальные научные вопросы лежат в основе этой темы?*\n"
+        "   - *Какова практическая значимость исследования?*\n"
+        "   - *Какие методы исследования применимы?*\n\n"
         "ЭТАП 2: ФОРМИРОВАНИЕ MASTER PLAN (Вывод в формате JSON)\n"
-        "   - На основе результатов сканирования, создай структуру документа.\n"
-        "   - Используй универсальную логическую последовательность (если тема не диктует иного):\n"
-        "     1. **ВВЕДЕНИЕ И ПОСТАНОВКА ПРОБЛЕМЫ:** (Почему это важно? Какова цель?)\n"
-        "     2. **ТЕОРЕТИЧЕСКИЙ ФУНДАМЕНТ:** (Основные понятия, принципы, история вопроса).\n"
-        "     3. **КЛЮЧЕВОЙ АНАЛИЗ:** (Разбор основной части темы, исследование факторов, механизмов).\n"
-        "     4. **ПРАКТИЧЕСКОЕ ПРИМЕНЕНИЕ / КЕЙСЫ:** (Как это работает в реальном мире? Примеры, данные).\n"
-        "     5. **СИНТЕЗ И ПЕРСПЕКТИВЫ:** (Объединение всех данных, выводы, прогнозы, рекомендации).\n\n"
+        "   - Создай строгую структуру документа. Обязательно используй академический стиль.\n"
+        "   - Если создаешь дипломную работу, используй классическую структуру:\n"
+        "     1. **ВВЕДЕНИЕ:** (Актуальность темы, объект, предмет, цель, задачи, методы исследования).\n"
+        "     2. **ГЛАВА 1. ТЕОРЕТИЧЕСКИЕ АСПЕКТЫ:** (Обзор литературы, основные понятия, история развития).\n"
+        "     3. **ГЛАВА 2. АНАЛИТИЧЕСКАЯ ЧАСТЬ:** (Анализ текущего состояния проблемы, исследование на конкретных данных или примерах).\n"
+        "     4. **ГЛАВА 3. ПРАКТИЧЕСКАЯ ЧАСТЬ (РЕКОМЕНДАЦИИ):** (Разработка решений, оценка их эффективности, перспективы).\n"
+        "     5. **ЗАКЛЮЧЕНИЕ:** (Краткие итоги по каждой главе, подтверждение достижения цели).\n\n"
         "ТРЕБОВАНИЕ К JSON ВЫВОДУ:\n"
-        "Для каждой главы в поле `key_points` перечисли КОНКРЕТНЫЕ вопросы или аспекты, которые должны быть раскрыты (например: 'Анализ SWOT для технологии X', 'Сравнение подходов A и B', 'Разбор кейса компании Y')."
+        "Для каждой главы в поле `key_points` перечисли КОНКРЕТНЫЕ научные вопросы или аспекты, которые должны быть раскрыты. В полях `doc_type`, `author`, `supervisor` укажи соответствующие данные (если не переданы - используй дефолтные)."
     )
 
     # --- 3: Промпты поиска ---
@@ -1376,41 +1377,59 @@ class DocumentForge:
         # Создаем пустой документ Word.
         doc = docx.Document()
 
+        # Настройка полей по ГОСТ
+        for section in doc.sections:
+            section.top_margin = docx.shared.Cm(2)
+            section.bottom_margin = docx.shared.Cm(2)
+            section.left_margin = docx.shared.Cm(3)
+            section.right_margin = docx.shared.Cm(1.5)
+
         # === 1. ЦЕНТРАЛИЗОВАННАЯ НАСТРОЙКА СТИЛЕЙ ===
         # Вызываем один метод, который определяет и настраивает все стили в документе.
         # Это обеспечивает консистентность и упрощает управление внешним видом.
         DocumentForge._define_document_styles(doc)
 
         # === 2. ФОРМИРОВАНИЕ ТИТУЛЬНОГО ЛИСТА ===
-        # Используем отступы параграфов вместо пустых строк для точного контроля верстки.
+        p_type = doc.add_paragraph(getattr(master_plan, "doc_type", "ДИПЛОМНАЯ РАБОТА").upper())
+        p_type.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        if p_type.runs:
+            p_type.runs[0].font.name = 'Times New Roman'
+            p_type.runs[0].font.size = Pt(16)
+            p_type.runs[0].font.bold = True
+        p_type.paragraph_format.space_before = Pt(100)
+
         p_title = doc.add_paragraph()
-        p_title.paragraph_format.first_line_indent = Inches(0) 
-        p_title.paragraph_format.space_before = Pt(140)
+        p_title.paragraph_format.first_line_indent = docx.shared.Cm(0)
+        p_title.paragraph_format.space_before = Pt(20)
         
         run_title = p_title.add_run(master_plan.main_title.upper())
         p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        # Настраиваем шрифт заголовка.
         font_title = run_title.font
         font_title.name = 'Times New Roman'
         font_title.bold = True
-        font_title.size = Pt(16)
+        font_title.size = Pt(18)
 
-        # Добавляем подзаголовок, если он есть.
         if master_plan.subtitle:
             p_sub = doc.add_paragraph(master_plan.subtitle)
-            p_sub.paragraph_format.first_line_indent = Inches(0)
+            p_sub.paragraph_format.first_line_indent = docx.shared.Cm(0)
             p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
             p_sub.runs[0].font.italic = True
             p_sub.runs[0].font.size = Pt(14)
 
-        # Добавляем блок с датой внизу страницы.
+        p_author = doc.add_paragraph()
+        p_author.paragraph_format.first_line_indent = docx.shared.Cm(0)
+        p_author.paragraph_format.space_before = Pt(60)
+        p_author.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p_author.add_run(f"Выполнил: {getattr(master_plan, 'author', 'Студент')}\n")
+        p_author.add_run(f"Руководитель: {getattr(master_plan, 'supervisor', 'Преподаватель')}")
+
         p_date = doc.add_paragraph()
-        p_date.paragraph_format.first_line_indent = Inches(0)
-        p_date.paragraph_format.space_before = Pt(250)  # Большой отступ сверху, чтобы сдвинуть текст вниз.
+        p_date.paragraph_format.first_line_indent = docx.shared.Cm(0)
+        p_date.paragraph_format.space_before = Pt(150)
         p_date.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        date_str = datetime.now().strftime("%d.%m.%Y")
-        p_date.add_run(f"Аналитический отчет\n{date_str}")
+        date_str = datetime.now().strftime("%Y")
+        p_date.add_run(f"Москва, {date_str}")
 
         # Завершаем титульный лист разрывом страницы.
         doc.add_page_break()
@@ -1463,14 +1482,14 @@ class DocumentForge:
         style_normal = doc.styles['Normal']
         font = style_normal.font
         font.name = 'Times New Roman'
-        font.size = Pt(12)
+        font.size = Pt(14)
         font.color.rgb = RGBColor(0, 0, 0)
 
         p_format = style_normal.paragraph_format
-        p_format.line_spacing = 1.15
+        p_format.line_spacing = 1.5
         p_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-        p_format.first_line_indent = Inches(0.5)
-        p_format.space_after = Pt(6)
+        p_format.first_line_indent = docx.shared.Cm(1.25)
+        p_format.space_after = Pt(0)
 
         # --- 2. Настройка встроенных стилей Word ---
         # Заголовки
@@ -3973,7 +3992,21 @@ class GenesisDashboard(ctk.CTk):
         self.bot = ctk.CTkFrame(self, height=60, fg_color="transparent")
         self.bot.grid(row=2, column=0, columnspan=2, sticky="ew", padx=20, pady=20)
         
-        self.entry = ctk.CTkEntry(self.bot, placeholder_text="Enter mission directive...", height=40, font=("Arial", 14), border_color=C_BORDER)
+        # Meta info for academic papers
+        self.meta_frame = ctk.CTkFrame(self.bot, fg_color="transparent")
+        self.meta_frame.pack(side="left", fill="x", expand=False, padx=(0, 10))
+
+        self.doc_type_var = ctk.StringVar(value="Дипломная работа")
+        self.doc_type_menu = ctk.CTkOptionMenu(self.meta_frame, values=["Дипломная работа", "Курсовая работа", "Статья", "Отчет"], variable=self.doc_type_var, width=150)
+        self.doc_type_menu.pack(side="left", padx=5)
+
+        self.author_entry = ctk.CTkEntry(self.meta_frame, placeholder_text="Автор", width=120)
+        self.author_entry.pack(side="left", padx=5)
+
+        self.supervisor_entry = ctk.CTkEntry(self.meta_frame, placeholder_text="Руководитель", width=120)
+        self.supervisor_entry.pack(side="left", padx=5)
+
+        self.entry = ctk.CTkEntry(self.bot, placeholder_text="Тема работы...", height=40, font=("Arial", 14), border_color=C_BORDER)
         self.entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
         self.entry.bind("<Return>", lambda e: self.start())
         
@@ -4058,6 +4091,9 @@ class GenesisDashboard(ctk.CTk):
         t = self.entry.get()
         if not t: return
         self.entry.configure(state="disabled")
+        self.author_entry.configure(state="disabled")
+        self.supervisor_entry.configure(state="disabled")
+        self.doc_type_menu.configure(state="disabled")
         self.btn.configure(state="disabled", text="RUNNING...")
         
         # Сброс
@@ -4067,13 +4103,22 @@ class GenesisDashboard(ctk.CTk):
         
         self.viz.set_mode("SYSTEM")
         self.viz.start()
-        threading.Thread(target=self._run, args=(t,), daemon=True).start()
 
-    def _run(self, t):
+        meta = {
+            "doc_type": self.doc_type_var.get(),
+            "author": self.author_entry.get() or "Студент",
+            "supervisor": self.supervisor_entry.get() or "Преподаватель"
+        }
+
+        threading.Thread(target=self._run, args=(t, meta), daemon=True).start()
+
+    def _run(self, t, meta):
         try: 
+            # Добавляем мета-информацию к теме, чтобы Архитектор мог ее распарсить и включить в MasterPlan
+            enriched_topic = f"{t}\n\n[МЕТАДАННЫЕ ДЛЯ ТИТУЛЬНОГО ЛИСТА]\nТип: {meta['doc_type']}\nАвтор: {meta['author']}\nРуководитель: {meta['supervisor']}\n(Пожалуйста, верни эти поля в JSON)"
             # Создаем экземпляр и сохраняем в переменную
             system = GenesisSystem()
-            system.produce_article(t)
+            system.produce_article(enriched_topic)
         except Exception as e: 
             error_msg = f"CRITICAL FAILURE: {e}"
             logger.error(error_msg, exc_info=True)
