@@ -1434,6 +1434,21 @@ class DocumentForge:
         # Завершаем титульный лист разрывом страницы.
         doc.add_page_break()
 
+        # Нумерация страниц (по центру снизу)
+        DocumentForge._add_page_numbers(doc)
+
+        # Оглавление (Плейсхолдер для автосборки в Word)
+        p_toc = doc.add_paragraph("СОДЕРЖАНИЕ", style='Heading 1')
+        p_toc.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        toc_note = doc.add_paragraph()
+        toc_note.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        toc_run = toc_note.add_run("[Оглавление сгенерируется автоматически. В Microsoft Word нажмите: Ссылки -> Оглавление -> Автособираемое оглавление]")
+        toc_run.font.italic = True
+        toc_run.font.color.rgb = RGBColor(128, 128, 128)
+
+        doc.add_page_break()
+
         # === 3. РЕНДЕРИНГ ОСНОВНОГО КОНТЕНТА ===
         # Объединяем части текста в единую строку, если они переданы списком.
         full_text = "\n".join(full_text_parts) if isinstance(full_text_parts, list) else full_text_parts
@@ -1493,18 +1508,35 @@ class DocumentForge:
 
         # --- 2. Настройка встроенных стилей Word ---
         # Заголовки
-        for level in range(1, 5):
+
+        # Heading 1 (Главы) - По центру, без отступа, жирный, 14pt (ГОСТ)
+        style_heading_1 = doc.styles['Heading 1']
+        style_heading_1.base_style = style_normal
+        font = style_heading_1.font
+        font.name = 'Times New Roman'
+        font.color.rgb = RGBColor(0, 0, 0)
+        font.bold = True
+        font.size = Pt(14)
+        p_format = style_heading_1.paragraph_format
+        p_format.first_line_indent = docx.shared.Cm(0)
+        p_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_format.space_before = Pt(24)
+        p_format.space_after = Pt(18)
+
+        # Heading 2 и ниже (Подразделы) - С абзацного отступа, по левому краю
+        for level in range(2, 5):
             style_heading = doc.styles[f'Heading {level}']
             style_heading.base_style = style_normal
             font = style_heading.font
             font.name = 'Times New Roman'
             font.color.rgb = RGBColor(0, 0, 0)
             font.bold = True
-            font.size = Pt(16 - level * 1.5)
+            font.size = Pt(14)
             p_format = style_heading.paragraph_format
-            p_format.first_line_indent = Inches(0)
+            p_format.first_line_indent = docx.shared.Cm(1.25)
+            p_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             p_format.space_before = Pt(18)
-            p_format.space_after = Pt(6)
+            p_format.space_after = Pt(12)
 
         # Гиперссылки (FIXED)
         try:
@@ -1576,6 +1608,42 @@ class DocumentForge:
             p_format.first_line_indent = Inches(0)
             p_format.hanging_indent = Inches(0.5)
             p_format.space_after = Pt(4)
+
+    @staticmethod
+    def _add_page_numbers(doc):
+        """Добавляет номера страниц в нижний колонтитул"""
+        def create_element(name):
+            return OxmlElement(name)
+
+        def create_attribute(element, name, value):
+            element.set(qn(name), value)
+
+        for section in doc.sections:
+            footer = section.footer
+            paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+            run = paragraph.add_run()
+            fldChar1 = create_element('w:fldChar')
+            create_attribute(fldChar1, 'w:fldCharType', 'begin')
+
+            instrText = create_element('w:instrText')
+            create_attribute(instrText, 'xml:space', 'preserve')
+            instrText.text = "PAGE"
+
+            fldChar2 = create_element('w:fldChar')
+            create_attribute(fldChar2, 'w:fldCharType', 'separate')
+
+            fldChar3 = create_element('w:fldChar')
+            create_attribute(fldChar3, 'w:fldCharType', 'end')
+
+            run._r.append(fldChar1)
+            run._r.append(instrText)
+            run._r.append(fldChar2)
+            run._r.append(fldChar3)
+
+            run.font.name = 'Times New Roman'
+            run.font.size = Pt(12)
 
     @staticmethod
     def _format_latex_as_text(latex_str: str) -> str:
